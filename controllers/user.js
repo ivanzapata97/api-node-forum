@@ -68,10 +68,6 @@ var controller = {
                                 })
                             }
                         })
-                        //devolver respuesta
-                        return res.status(200).send({
-                            message:'Usuario no estaba registrado'
-                        })
                     })   
                 } else {
                     return res.status(200).send({
