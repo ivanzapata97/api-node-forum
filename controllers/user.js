@@ -23,10 +23,16 @@ var controller = {
         var params = req.body
 
         //validar los datos
-        var validate_name = !validator.isEmpty(params.name)
-        var validate_surname = !validator.isEmpty(params.surname)
-        var validate_email = !validator.isEmpty(params.email) && validator.isEmail(params.email)
-        var validate_password = !validator.isEmpty(params.password)
+        try{
+            var validate_name = !validator.isEmpty(params.name)
+            var validate_surname = !validator.isEmpty(params.surname)
+            var validate_email = !validator.isEmpty(params.email) && validator.isEmail(params.email)
+            var validate_password = !validator.isEmpty(params.password)
+        } catch(err){
+            return res.status(200).send({
+                message: 'Faltan datos por enviar'
+            })
+        }
 
         if (validate_name && validate_surname && validate_email && validate_password){
             //crear objeto de usuario
@@ -89,8 +95,14 @@ var controller = {
         var params = req.body
         
         //validar los datos 
-        var validate_email = !validator.isEmpty(params.email) && validator.isEmail(params.email)
-        var validate_password = !validator.isEmpty(params.password)
+        try{
+            var validate_email = !validator.isEmpty(params.email) && validator.isEmail(params.email)
+            var validate_password = !validator.isEmpty(params.password)
+        } catch(err){
+            return res.status(200).send({
+                message: 'Faltan datos por enviar'
+            })
+        }
 
         if(!validate_email || !validate_password){
             return res.status(200).send({
@@ -138,6 +150,67 @@ var controller = {
             })
         })
         
+    },
+
+    update: function(req, res){
+        //recoger los datos del usuario
+        var params = req.body
+        
+        //validar datos
+        try {
+            var validate_name = !validator.isEmpty(params.name)
+            var validate_surname = !validator.isEmpty(params.surname)
+            var validate_email = !validator.isEmail(params.email) && !validator.isEmpty(params.email)
+        } catch(err){
+            return res.status(200).send({
+                message: 'Faltan datos por enviar'
+            })
+        }
+
+        //eliminar propiedades innecesarias
+        delete params.password
+
+        var userID = req.user.sub
+
+        //comprobar si el email es unico
+        if(req.user.email != params.email){
+            User.findOne({email: params.email.toLowerCase()}, (err, user) => {
+                if(err){
+                    return res.status(500).send({
+                        message:'Error al actualizar usuario'
+                    })
+                }
+
+                if(user && user.email == params.email){
+                    return res.status(200).send({
+                        message:'El email no se puede modificar'
+                    })
+                }
+            })
+        } else {
+            //buscar y actualizar 
+            User.findOneAndUpdate({_id:userID}, params, {new:true}, (err, userUpdate) => {
+                
+                if(err){
+                    return res.status(500).send({
+                        status:'Error',
+                        message:'Error al actualizar el usuario'
+                    })
+                }
+
+                if(!userUpdate){
+                    return res.status(500).send({
+                        status:'Error',
+                        message:'No se ha actualizado el usuario'
+                    })
+                }
+                //devolver respuesta si es correcto
+                return res.status(200).send({
+                    status: 'success',
+                    user: userUpdate
+                })
+            })
+        }
     }
 }
 
